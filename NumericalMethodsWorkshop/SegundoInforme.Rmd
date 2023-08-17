@@ -1,0 +1,210 @@
+---
+title: "SegundoInforme"
+author: "Carol Valentina Villanueva/Jorge Eduardo Rodriguez"
+date: "3/4/2022"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(ggplot2)
+library(readxl)
+library(tidyr)
+library(tidyverse)
+library(modeest)
+```
+
+
+# 2) Introducción
+
+Cotidianamente se pueden observar diversidad de escenarios donde se puede atribuir el desenlace de un evento al azar, incluso por encima de la frecuencia de aquellos que pueden acontecer con una exactitud previsible. Esencialmente la aplicación de las diferentes ramas de la probabilidad reside en la capacidad para estimar o predecir eventos, incluso si estos se dan por acontecimientos del azar, por esta razón, se entiende como probabilidad la existencia de que algo pueda ocurrir. 
+
+La probabilidad se centra en el porcentaje de posibilidad de que un hecho suceda, siendo 0 un evento imposible probabilisticamente hablando y 1 el valor que tendría un evento cuyo desenlace se conoce con exactitud. Las distribuciones de probabilidad para una variable en especifico se pueden obtener a partir de datos experimentales y la frecuencia de ocurrencia del valor de la variable en especifico, por esta razón, entre más datos o información se tengan para calcular un evento, más acertado será el resultado calculado. 
+
+Dadas las carácterísticas de esta rama de la ciencia, esta tiene gran variedad de aplicación en todas las ramas del conocimiento. En el ambito de la biología es de suma importancia la determinación de las características de los arboles para identificar la viabilidad de un escosistema y de las posibles especies que se encontrarían allí. Por ello, la adquisición de probabilidades asociadas a la edad, diametro de tronco, altura e incluso especie de los arboles deben ser predecidos lo más acertadamente con probabilidad, posibilidades que se estudiarán en el siguiente informe.
+
+
+
+# 3) Análisis de la tabla de contingencia.
+
+Empezamos importando los datos para hacer el tratamiento estadístico pertinente
+
+```{r}
+censo <- read.csv2("CENSO ARBOREO COMUNA 15 CALI COLOMBIA.csv")
+```
+
+Se realiza la tabla de contingencia de los datos:
+
+```{r}
+
+tabla_veged<-table(censo$TIPO.DE.VEGETACIÓN, censo$EDAD)
+tabla_veged
+
+```
+
+Reorganizando los datos en una tabla de contingencia con las frecuencias relativas y las sumas por filas y columnas encontramos la siguiente información
+
+```{r}
+fr <- addmargins(tabla_veged/sum(tabla_veged))
+fr
+```
+
+Donde cada valor dentro de esta tabla se interpreta como la probabilidad de eventos en especificos:
+
+
+
+Calculamos las probabilidades
+
+```{r}
+
+PArbol = fr[1,3] ;
+PArbolJuvenil = fr[1,1] ;
+PArbolMaduro = fr[1,2] ;
+
+PArbusto = fr[2,3] ;
+PArbustoJuvenil = fr[2,1] ;
+PArbustoMaduro = fr[2,2] ;
+
+PPalma = fr[3,3] ;
+PPalmaJuvenil = fr[3,1] ;
+PPalmaMaduro = fr[3,2] ;
+
+PPlantaArb = fr[4,3] ;
+PPlantaArbJuvenil = fr[4,1] ;
+PPlantaArbMaduro = fr[4,2] ;
+
+PJuvenil = fr[5,1] ;
+PMaduro = fr[5,2] ;
+
+```
+
+
+a) La probabilidad de que al elegir un individuo al azar de la muestra este pertenezca a la categoría de maduro, dado que no pertenece a los juveniles, se calcula de la siguiente forma:
+
+
+En este escenario la intersección entre estar maduro y no ser arbol es la probabilidad de que el resto de las especies sean maduros. Por tanto,
+
+```{r}
+
+Pa <- (PArbustoMaduro+PPalmaMaduro+PPlantaArbMaduro)/(1-PArbol) ;
+Pa
+  
+```
+
+b) La probabilidad de que al elegir un individuo al aza este no pertenezca a la categoria de palma, dado que pertenece maduro es:
+
+
+La intersección entre no ser Palma y estar maduro es la probabilidad de tener el resto de especies maduras, por tanto,
+
+```{r}
+
+Pb <- (PArbustoMaduro+PArbolMaduro+PPlantaArbMaduro)/(PMaduro) ;
+Pb
+  
+```
+
+c) La probabilidad de que al elegir un individuo al azar de la muestra este sea arbusto o palma, dado que no es maduro, es
+
+
+En este caso la intersección entre ser arbusto o palma se puede obtener bajo la suposición de que ser arbusto o palma son eventos independientes, por tanto,
+
+
+Luego, la probabildad
+
+
+```{r}
+
+Pb <- (PArbustoJuvenil+PPalmaJuvenil-PArbustoJuvenil*PPalmaJuvenil)/(1-PMaduro) ;
+Pb
+ 
+``` 
+
+# 4) Análisis de la regresión lineal.
+
+a) Hacemos el modelo
+``` {r}
+mod<-lm(censo$ALTURA.ARBOL~censo$DAP)
+``` 
+
+Y para observar el arreglo tenemos
+
+``` {r}
+
+plot(censo$DAP,censo$ALTURA.ARBOL,xlim=c(0,1),ylim=c(0,20),xlab="",ylab="")
+
+par(new=TRUE)
+
+fun = function (x) mod$coefficients[1]+mod$coefficients[2]*x
+plot(fun,from=0,to=1,xlim=c(0,1),ylim=c(0,20),ylab="Altura del arbol, m",xlab="DAP, m",col="red")
+
+``` 
+ 
+ 
+ b) Con el resumen del ajuste lineal de los datos podemos identificar un valor de r^2 de 0.6258.
+  
+```{r}
+summary(mod)
+
+```
+
+Con base en que este valor oscila entre 0 y 1, donde 0 establece que no hay relación alguna entre el modelo y los datos y, por el contrario, 1 será el valor donde el modelo predice todos los datos empleados para el ajuste. El resultado obtenido de R^2, sugiere que sí existe una relación lineal entre los datos. Sin embargo, incluso si este valor se encuentra por encima de 0.5, resulta evidente que hay un gran margen de datos que no son representados por el modelo, en especial por la alta varianza que estos datos tienen.
+
+
+c)
+
+El ajuste realizado y el modelo lineal empleado establece una relación acertada entre DAP y la altura de los arboles, no obstante, es importante resaltar que, dada la naturaleza de las variables analizadas, los datos presentan una variación muy elevada. Por tanto, es indispensable tener en cuenta la desviación para las variables del modelo, este dato permite establecer con precisión un intervalo en el que se encontrarían los valores de las variables de estudio.
+
+# 5. Construcción de la distribución.
+
+La variable nominal elegida serán el tipo de vegetación y, por tanto, se examinará la tercera categoría asociada a la palma. La variable de esta categoría podría ser DAP, altura arbol o incluso el No. de tallos.
+
+
+```{r}
+
+DatosPalma =  filter(censo, censo$TIPO.DE.VEGETACIÓN == "Palma")
+
+hist(DatosPalma$ALTURA.ARBOL, prob = TRUE,xlab = "Altura de arbol, m", ylab = "Frecuencia relativa", main="Altura Arbol")
+grid(nx = NA, ny = NULL, lty = 2, col = "gray", lwd = 1)
+
+hist(DatosPalma$N..DE.TALLOS, prob = TRUE,xlab = "No. tallos", ylab = "Frecuencia relativa",main="No. de tallos")
+grid(nx = NA, ny = NULL, lty = 2, col = "gray", lwd = 1)
+
+hist(DatosPalma$DAP*10, freq = FALSE,xlab = "DAP*10, m", ylab = "Frecuencia relativa", main="DAP")
+grid(nx = NA, ny = NULL, lty = 2, col = "gray", lwd = 1)
+
+```
+
+Estos histogramas están dados para el censo original, donde se tiene un total de 26 inidividuos. Si deseamos que estos resultados sean para 10 tendremos que multiplicar las frecuencias relativas por el valor de los individuos a tomar, encontrando las siguientes distribuciones para cada variable
+
+```{r}
+
+DatosPalma =  filter(censo, censo$TIPO.DE.VEGETACIÓN == "Palma")
+
+hist(DatosPalma$ALTURA.ARBOL/10, prob = TRUE,xlab = "Altura de arbol/10, m", ylab = "Frecuencia relativa", main="Altura Arbol")
+grid(nx = NA, ny = NULL, lty = 2, col = "gray", lwd = 1)
+
+hist(DatosPalma$N..DE.TALLOS/10, prob = TRUE,xlab = "No. tallos/10", ylab = "Frecuencia relativa",main="No. de tallos")
+grid(nx = NA, ny = NULL, lty = 2, col = "gray", lwd = 1)
+
+hist(DatosPalma$DAP, freq = FALSE,xlab = "DAP, m", ylab = "Frecuencia relativa", main="DAP")
+grid(nx = NA, ny = NULL, lty = 2, col = "gray", lwd = 1)
+
+```
+
+
+# Conclusiones:
+
+- Con los resultados obtenidos en el censo, es posible evidenciar que escogiendo un individuo al azar se tiene una mayor probabilidad para que este se encuentre entre arbol o arbusto. De igual forma, las características menos favorecidad en términos probabilisticos, al menos con los resultados del censo, son las condiciones de planta arbustiva y palma. Por otro lado, en la muestra estudiada hay una mayor proporción de espcecies en una edad madura, llegando a representar más del 80%.
+
+-El ajuste realizado con el modelo lineal empleado para predecir la altura de los arboles en función del DAP, obtuvo un de R^2 ~ 0.6. Este dato sugiere que la varianza del modelo lineal representa alrededor del 60% de la varianza de los datos;  dependendiendo del escenario y el objetivo de calculo, esta regreción puede ser útil para predecir algunos datos o al menos una tendencia, sin embargo, es importante resaltar que dada la naturaleza de las variables analizadas, los datos presentan una variación muy elevada y, por tanto, es indispensable tener en cuenta la desviación de las variables del modelo para aumentar la probabilidad de encontrar un valor acertado en un intervalo de posibles soluciones de las variables de estudio.
+
+- Con la distribución discreta de la muestra análizada se puede observar que si se eligen de manera aleatoria 10 palmas se tiene poco más del 50% de probabilidad de que su DAB se encuentre entre 0-0.1 y casi el 80% de que tenga 1-2 tallos. No obstante, la altura del arbol tiene una distribución cuasiuniforme, almenos para los valores comprendidos entre 2-7m, que tienen un poco más de frecuencia relativa en comparación con el resto de datos.
+
+# Bibliografia
+
+
+
+
+
+
